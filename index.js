@@ -30,7 +30,8 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 const coffeeCollection = client.db("CoffeeDB").collection("Coffees");
-
+const userCollection = client.db("CoffeeDB").collection("User");
+ 
 app.post ('/coffees' , async(req,res)=>{
     const newCoffee = req.body;
     const result = await coffeeCollection.insertOne(newCoffee);
@@ -49,9 +50,11 @@ app.get('/coffees' , async(req ,res)=>{
 
 app.get('/coffees/singleCoffee/:id' , async(req , res)=>{
   const id = req.params.id;
+  
   const query = {_id : new ObjectId(id)}
   const result = await coffeeCollection.findOne(query);
   res.send(result);
+ 
 })
 
 
@@ -68,6 +71,68 @@ app.delete('/coffees/:id' , async(req, res)=>{
   res.send(result);
 })
 
+app.get('/coffees/updateCoffee/:id' , async(req , res)=>{
+  const id = req.params.id;
+  const query = {_id : new ObjectId(id)}
+  const result = await coffeeCollection.findOne(query);
+  res.send(result)
+})
+
+app.put('/coffees/updateCoffee/:id' , async(req , res)=>{
+  const id = req.params.id;
+  const query = {_id : new ObjectId(id)}
+  const options = {upsert : true}
+  const updatedCoffee = req.body
+  const coffee = {
+    $set : {
+name : updatedCoffee.name,
+category : updatedCoffee.category,
+supplier : updatedCoffee.supplier,
+chef : updatedCoffee.chef,
+taste : updatedCoffee.taste,
+details : updatedCoffee.details,
+photo : updatedCoffee.photo,
+    }
+  }
+  const result = await coffeeCollection.updateOne(query ,coffee, options);
+  res.send(result)
+})
+
+// User Related Apis
+
+
+app.post("/users", async(req,res)=>{
+  const user = req.body;
+  console.log(user);
+  const result = await userCollection.insertOne(user);
+  res.send(result);
+})
+
+app.get('/users', async(req,res)=>{
+  const cursor = userCollection.find();
+  const users = await cursor.toArray();
+  res.send(users);
+})
+
+app.patch('/users' , async(req, res) =>{
+const user = req.body;
+const filter = {email : user.email}
+const updateDoc = {
+  $set : {
+    lastLoggedAt : user.lastLoggedAt
+  }
+}
+const result = await userCollection.updateOne(filter, updateDoc);
+res.send(result);
+})
+
+app.delete('/users/:id' , async(req, res)=>{
+  const id = req.params.id;
+  const query = {_id : new ObjectId (id)}
+  const result = await userCollection.deleteOne(query);
+  res.send(result);
+
+})
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
